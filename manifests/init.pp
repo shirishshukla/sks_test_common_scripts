@@ -30,7 +30,7 @@ class lfg_wh_common_scripts {
 
   # Do local git checkout
   if $scriptdir != undef {
-    lfg_wh_common_scripts::gitcheckout {$scriptdir: }
+    lfg_wh_common_scripts::gitpull {$scriptdir: }
   }
 
 }

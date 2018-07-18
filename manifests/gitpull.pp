@@ -1,6 +1,6 @@
 #
 
-define lfg_wh_common_scripts::gitcheckout( $scriptdir = $title ) {
+define lfg_wh_common_scripts::gitpull( $scriptdir = $title ) {
 
    $giturl = 'https://github.com/puppetlabs/puppetlabs-apache.git'
    $gitdir = 'files'
