@@ -1,0 +1,153 @@
+## Widnows 
+wget https://releases.hashicorp.com/vagrant/2.2.6/vagrant_2.2.6_x86_64.msi
+
+$ mkdir vagrant_getting_started
+$ cd vagrant_getting_started
+$ vagrant init hashicorp/bionic64
+
+vagrant box add hashicorp/bionic64
+
+# file  Vagrantfile
+Vagrant.configure("2") do |config|
+  config.vm.box = "hashicorp/bionic64"
+  config.vm.box_version = "1.1.0"
+end
+
+# UP
+vagrant up
+
+# SSH
+vagrant ssh
+
+################## test code 
+Vagrant.configure("2") do |config| 
+    config.vm.box = "bento/ubuntu-18.04"+
+    config.vm.provider "virtualbox" do |vb| 
+        vb.memory = "4024" 
+        vb.cpus = "1"
+    end
+    config.vm.provision "ansible" do |ansible|
+        ansible.become = true
+        ansible.verbose = "v"        
+        ansible.extra_vars = "ansible_extra_vars.yml"
+        ansible.vault_password_file="~/.vault_pass.txt"
+        ansible.playbook = "/home/yortuc/ansible/playbook.yaml"
+    end
+end
+
+############
+######## default/main.yml
+#### Ubuntu 
+## pre requi
+clamav_dep_packages:
+  - openssl
+  - openssl-devel
+  - libcurl-devel
+  - zlib-devel
+  - libpng-devel
+  - libxml2-devel
+  - json-c-devel
+  - bzip2-devel
+  - pcre2-devel
+  - ncurses-devel
+  - valgrind
+  - check-devel
+
+## Tarball 
+version='0.102.1'
+wget https://www.clamav.net/downloads/production/clamav-${version}.tar.gz
+
+tar -xvzf ~/clamav-${version}.tar.gz
+cd ~/clamav-${version}
+./configure
+make
+checkinstall
+dpkg -i ~/clamav-0.99.1/clamav_0.99.1-1_amd64.deb
+dpkg-reconfigure clamav-freshclam
+rm -f /usr/local/etc/freshclam.conf
+ln -s /etc/clamav/freshclam.conf /usr/local/etc/freshclam.conf
+
+clamscan -r /
+
+---
+
+# clamav version
+clamav_version: 0.102.1
+clamav_src_code_url: https://www.clamav.net/downloads/production/clamav-{{ clamav_version }}.tar.gz
+clamav_extract_temp_dir: /tmp/clamav_temp
+
+# clamav daemond
+clamav_daemon_state: started
+clamav_daemon_enabled: true
+
+# clamav-freshclam daemon 
+clamav_freshclam_daemon_state: started
+clamav_freshclam_daemon_enabled: true
+
+########## task/main.yml
+---
+# Extract Binary 
+- name: Unarchive clamav-{{ clamav_version }}.tar.gz 
+  unarchive:
+    src: {{ clamav_src_code_url }}
+    dest: {{ clamav_extract_temp_dir }}
+    remote_src: yes
+  
+# Install 
+- name: configure 
+  command: ./configure
+  args:
+    chdir: "{{ clamav_extract_temp_dir }}/clamav-{{ clamav_version }}"
+  register: configure_return
+
+- name: make 
+  command: make
+  args:
+    chdir: "{{ clamav_extract_temp_dir }}/clamav-{{ clamav_version }}"
+  register: make_return
+
+# Validate prerequisites
+- name: checkinstall
+  command: checkinstall
+  args:
+    chdir: "{{ clamav_extract_temp_dir }}/clamav-{{ clamav_version }}"
+  register: checkinstall_return
+  
+# Install dpkg 
+- name: Install dpkg 
+  command: dpkg -i {{ deb_path }}
+  vars:
+    deb_path: "{{ clamav_extract_temp_dir }}/clamav-{{ clamav_version }}/clamav_{{ clamav_version }}_amd64.deb"
+  args:
+    chdir: "{{ clamav_extract_temp_dir }}/clamav-{{ clamav_version }}"
+  register: checkinstall_return
+  
+# dpkg-reconfigure clamav-freshclam
+- name: dpkg-reconfigure 
+  command: dpkg-reconfigure clamav-freshclam
+  register: dpkg_reconfigure_return
+
+# Manage Files  
+
+
+# Remove freshclam default file 
+- name: Delete default freshclam.conf
+  file:
+    path: {{ freshclam_conf_usr }}
+    state: absent
+  run_once: true
+  register: del_freshclam_conf
+  vars:
+    freshclam_conf_usr: /usr/local/etc/freshclam.conf
+    
+# 
+- name: Create symlink 
+  file:
+    src: {{ freshclam_conf_etc }}
+    dest: {{ freshclam_conf_usr }}
+    state: link
+    vars:
+      freshclam_conf_usr: /usr/local/etc/freshclam.conf
+      freshclam_conf_etc: /etc/clamav/freshclam.conf 
+    
+## END ## 
