@@ -1,0 +1,37 @@
+## Widnows 
+wget https://releases.hashicorp.com/vagrant/2.2.6/vagrant_2.2.6_x86_64.msi
+
+$ mkdir vagrant_getting_started
+$ cd vagrant_getting_started
+$ vagrant init hashicorp/bionic64
+
+vagrant box add hashicorp/bionic64
+
+# file  Vagrantfile
+Vagrant.configure("2") do |config|
+  config.vm.box = "hashicorp/bionic64"
+  config.vm.box_version = "1.1.0"
+end
+
+# UP
+vagrant up
+
+# SSH
+vagrant ssh
+
+################## test code 
+Vagrant.configure("2") do |config| 
+    config.vm.box = "bento/ubuntu-18.04"+
+    config.vm.provider "virtualbox" do |vb| 
+        vb.memory = "4024" 
+        vb.cpus = "1"
+    end
+    config.vm.provision "ansible" do |ansible|
+        ansible.become = true
+        ansible.verbose = "v"        
+        ansible.extra_vars = "ansible_extra_vars.yml"
+        ansible.vault_password_file="~/.vault_pass.txt"
+        ansible.playbook = "/home/yortuc/ansible/playbook.yaml"
+    end
+end
+
