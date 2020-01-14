@@ -66,7 +66,7 @@ fi
 
 ## Check
 SRVPORT="$destHost:$destPort"
-CMD="timeout 2  bash -c \"</dev/tcp/$destHost/$destPort\" 2>/dev/null && echo TCP $SRVPORT- Port_Open || echo TCP $SRVPORT - Port_Closed"
+CMD="timeout 2  bash -c \"</dev/tcp/$destHost/$destPort\" 2>/dev/null && echo TCP $SRVPORT - Port_Open || echo TCP $SRVPORT - Port_Closed"
 
 echo -e "\nChecking TCP Connection to $SRVPORT"
 for SRV in `cat $fileName`; do
